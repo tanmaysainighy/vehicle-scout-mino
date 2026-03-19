@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mino — Vehicle Scout</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050508;--bg2:#0c0c12;--bg3:#13131c;--bg4:#1a1a26;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#eeeef5;--muted:#6b6b80;--muted2:#9999b0;
+  --accent:#7c6dfa;--accent2:#a594ff;--accent-glow:rgba(124,109,250,0.18);
+  --teal:#2dd4bf;--amber:#f59e0b;
+  --success:#34d399;--danger:#f87171;--info:#60a5fa;
+  --mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif;
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body{padding-bottom:5rem}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,109,250,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,109,250,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,109,250,0.12),transparent);pointer-events:none;z-index:0}
+
+header{position:sticky;top:0;z-index:200;padding:0 2.5rem;height:60px;display:flex;align-items:center;border-bottom:1px solid var(--border);background:rgba(5,5,8,0.88);backdrop-filter:blur(20px)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(124,109,250,0.5)}
+.logo-icon svg{width:16px;height:16px}
+.logo-name{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em}
+.logo-tag{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);padding:2px 7px;border:1px solid var(--border2);border-radius:4px;margin-left:2px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:0.68rem;color:var(--muted)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success);animation:pdot 2s ease infinite}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* HERO */
+.hero-section{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:3.5rem 2.5rem 1.5rem;display:grid;grid-template-columns:1fr 400px;gap:3rem;align-items:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent2);margin-bottom:1rem}
+.hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--accent2)}
+.hero-h1{font-size:clamp(2.2rem,4vw,3.2rem);font-weight:700;line-height:1.05;letter-spacing:-0.03em;margin-bottom:1rem}
+.hero-h1 .hl{color:transparent;-webkit-text-stroke:1px rgba(124,109,250,0.6)}
+.hero-desc{font-size:0.92rem;color:var(--muted2);line-height:1.7;max-width:400px;margin-bottom:1.5rem}
+.hero-stats{display:flex;gap:2rem}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat-num{font-size:1.3rem;font-weight:700;color:var(--accent2);letter-spacing:-0.02em}
+.stat-label{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.hero-graphic{position:relative;height:240px;display:flex;align-items:center;justify-content:center}
+.car-wrap{position:relative;animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.car-glow{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:220px;height:28px;background:radial-gradient(ellipse,rgba(124,109,250,0.35),transparent 70%);filter:blur(8px)}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 3s linear infinite;opacity:0.4}
+@keyframes scan{0%{top:0;opacity:0}10%{opacity:0.5}90%{opacity:0.5}100%{top:100%;opacity:0}}
+.rring{position:absolute;border:1px solid rgba(124,109,250,0.15);border-radius:50%;animation:rexp 3s ease-out infinite}
+.rring:nth-child(2){animation-delay:1s}.rring:nth-child(3){animation-delay:2s}
+@keyframes rexp{0%{width:60px;height:60px;opacity:0.5;top:50%;left:50%;transform:translate(-50%,-50%)}100%{width:280px;height:280px;opacity:0;top:50%;left:50%;transform:translate(-50%,-50%)}}
+
+/* MAIN */
+.main-wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 2.5rem}
+
+/* SEARCH PANEL */
+.search-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 0 60px rgba(124,109,250,0.06)}
+.ptopbar{display:flex;align-items:center;padding:0.85rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(124,109,250,0.03)}
+.ptopbar-left{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:0.7}
+.panel-inner{padding:1.5rem}
+.fields-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:1.1rem}
+.field label{display:block;font-family:var(--mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;color:var(--text);font-family:var(--mono);font-size:0.8rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.field input::placeholder{color:var(--muted)}
+.plats-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1.2rem}
+.plat-lbl{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;margin-right:4px}
+.ptag-static{display:flex;align-items:center;gap:6px;padding:6px 13px;background:rgba(124,109,250,0.08);border:1px solid rgba(124,109,250,0.3);border-radius:8px;font-size:0.76rem;font-weight:500;color:var(--accent2)}
+.run-btn{width:100%;position:relative;overflow:hidden;padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:var(--sans);font-weight:600;font-size:0.9rem;letter-spacing:0.02em;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 24px rgba(124,109,250,0.35)}
+.run-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent);pointer-events:none}
+.run-btn:hover{background:#9080ff;box-shadow:0 6px 32px rgba(124,109,250,0.5);transform:translateY(-1px)}
+.run-btn:active{transform:scale(0.99)}
+.run-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.btn-ico{width:18px;height:18px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* AGENT WINDOWS */
+.agents-section{margin-bottom:1.5rem;display:none}
+.agents-section.visible{display:block}
+.agents-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.agents-label::before{content:'';width:12px;height:1px;background:var(--muted)}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+
+.agent-window{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;transition:border-color 0.3s}
+.agent-window.running{border-color:rgba(124,109,250,0.4)}
+.agent-window.done{border-color:rgba(52,211,153,0.3)}
+.agent-window.error{border-color:rgba(248,113,113,0.3)}
+
+.aw-titlebar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.aw-dots{display:flex;gap:5px}
+.aw-dot{width:9px;height:9px;border-radius:50%}
+.aw-dot.red{background:#ff5f57}
+.aw-dot.yellow{background:#febc2e}
+.aw-dot.green{background:#28c840}
+.aw-title{font-family:var(--mono);font-size:0.66rem;letter-spacing:0.08em;color:var(--muted);margin-left:4px;flex:1}
+.aw-status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.agent-window.running .aw-status-dot{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pdot 1s ease infinite}
+.agent-window.done .aw-status-dot{background:var(--success)}
+.agent-window.error .aw-status-dot{background:var(--danger)}
+
+/* Live browser preview iframe */
+.aw-preview{position:relative;width:100%;height:220px;background:var(--bg3);overflow:hidden}
+.aw-preview iframe{width:100%;height:100%;border:none;display:block}
+.aw-preview-placeholder{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;
+  font-family:var(--mono);font-size:0.68rem;color:var(--muted);
+}
+.aw-preview-placeholder .ph-icon{font-size:1.8rem;opacity:0.3}
+.aw-preview-placeholder .ph-spin{
+  width:20px;height:20px;
+  border:2px solid var(--border3);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+
+/* Log bar under iframe */
+.aw-logbar{
+  padding:7px 12px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  min-height:34px;
+}
+.aw-logtext{font-family:var(--mono);font-size:0.64rem;color:var(--muted2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-logtext.hi{color:var(--accent2)}
+.aw-logtext.ok{color:var(--success)}
+.aw-logtext.er{color:var(--danger)}
+.aw-found-badge{font-family:var(--mono);font-size:0.6rem;padding:2px 8px;border-radius:4px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.25);color:var(--success);white-space:nowrap;display:none}
+.agent-window.done .aw-found-badge{display:block}
+
+/* SPIN */
+.spin{width:14px;height:14px;border:1.5px solid var(--border3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.65s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULTS */
+.res-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
+.res-meta{font-family:var(--mono);font-size:0.72rem;color:var(--muted)}
+.res-meta strong{color:var(--teal);font-size:0.88rem}
+.sort-ctl{display:flex;align-items:center;gap:8px}
+.sort-lbl{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.sort-sel{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--muted2);font-family:var(--mono);font-size:0.7rem;outline:none;cursor:pointer}
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:13px}
+.vcard{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;overflow:hidden;transition:border-color 0.2s,transform 0.18s,box-shadow 0.2s;animation:riseIn 0.4s cubic-bezier(0.23,1,0.32,1) both}
+.vcard:hover{border-color:rgba(124,109,250,0.35);transform:translateY(-3px);box-shadow:0 8px 40px rgba(124,109,250,0.12)}
+@keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.vcard-head{padding:0.9rem 1.1rem 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.src-badge{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px;background:var(--bg4);border:1px solid var(--border2);color:var(--muted);white-space:nowrap}
+.sell-badge{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 7px;border-radius:5px}
+.sell-badge.dealer{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);color:var(--info)}
+.sell-badge.private{background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.25);color:var(--teal)}
+.vcard-body{padding:0.65rem 1.1rem}
+.vcard-title{font-size:0.87rem;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:5px}
+.vcard-price{font-size:1.5rem;font-weight:700;letter-spacing:-0.02em;color:var(--accent2);margin-bottom:8px;line-height:1}
+.vcard-pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:0.63rem;color:var(--muted2)}
+.vcard-footer{border-top:1px solid var(--border);padding:9px 1.1rem;display:flex;align-items:center;justify-content:space-between}
+.loc-txt{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:0.63rem;color:var(--muted)}
+.view-btn{text-decoration:none;font-family:var(--mono);font-size:0.66rem;color:var(--accent2);padding:4px 11px;border:1px solid rgba(124,109,250,0.3);border-radius:6px;transition:all 0.18s;white-space:nowrap}
+.view-btn:hover{background:var(--accent-glow);border-color:rgba(124,109,250,0.5)}
+
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;padding:3.5rem 2rem;gap:1rem}
+.eico-wrap{position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center}
+.ering{position:absolute;inset:0;border:1px solid rgba(124,109,250,0.2);border-radius:50%;animation:spin 8s linear infinite}
+.ering2{position:absolute;inset:8px;border:1px dashed rgba(124,109,250,0.12);border-radius:50%;animation:spin 6s linear infinite reverse}
+.eico{font-size:2rem}
+.etitle{font-size:0.95rem;font-weight:600;color:var(--muted2)}
+.esub{font-family:var(--mono);font-size:0.7rem;color:var(--muted);letter-spacing:0.05em}
+
+@media(max-width:900px){.fields-grid{grid-template-columns:repeat(3,1fr)}.hero-section{grid-template-columns:1fr}.hero-graphic{display:none}}
+@media(max-width:600px){.fields-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 10h12M3 10l1.5-4h7L13 10M5 12.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm7 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="logo-name">Mino</span>
+    <span class="logo-tag">Vehicle Scout</span>
+  </div>
+</header>
+
+<section class="hero-section">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Multi-platform vehicle search</div>
+    <h1 class="hero-h1">Find the perfect car.<br><span class="hl">Across every listing.</span></h1>
+    <p class="hero-desc">Mino runs parallel AI agents across OLX, Craigslist, Cars.com and more — streaming results live as each agent finishes.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">Platforms</span></div>
+      <div class="stat"><span class="stat-num">Live</span><span class="stat-label">Streaming</span></div>
+      <div class="stat"><span class="stat-num">AI</span><span class="stat-label">Powered</span></div>
+    </div>
+  </div>
+  <div class="hero-graphic">
+    <div class="rring"></div><div class="rring"></div><div class="rring"></div>
+    <div class="scan-line"></div>
+    <div class="car-wrap">
+      <svg width="300" height="150" viewBox="0 0 320 160" fill="none">
+        <ellipse cx="160" cy="148" rx="110" ry="10" fill="rgba(124,109,250,0.08)"/>
+        <path d="M40 100 Q50 100 60 80 Q80 55 120 50 L200 50 Q240 50 260 80 Q270 100 280 100 L290 100 L290 115 Q290 120 285 120 L35 120 Q30 120 30 115 L30 100 Z" fill="#1a1a2e" stroke="rgba(124,109,250,0.5)" stroke-width="1.5"/>
+        <path d="M110 50 Q120 28 155 24 L175 24 Q210 24 220 50 Z" fill="#13132b" stroke="rgba(124,109,250,0.35)" stroke-width="1"/>
+        <path d="M115 50 Q125 32 155 28 L165 28 Q195 28 205 50 Z" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.3)" stroke-width="0.8"/>
+        <rect x="115" y="53" width="42" height="24" rx="3" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.25)" stroke-width="0.8"/>
+        <rect x="162" y="53" width="38" height="24" rx="3" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.25)" stroke-width="0.8"/>
+        <path d="M45 95 Q50 88 62 88 L75 88 L72 100 L42 100 Z" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.5)" stroke-width="1"/>
+        <line x1="35" y1="92" x2="20" y2="88" stroke="rgba(245,158,11,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="35" y1="96" x2="18" y2="96" stroke="rgba(245,158,11,0.4)" stroke-width="1" stroke-linecap="round"/>
+        <path d="M258 88 L270 88 Q278 88 280 95 L278 100 L256 100 Z" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.5)" stroke-width="1"/>
+        <line x1="158" y1="78" x2="158" y2="118" stroke="rgba(124,109,250,0.3)" stroke-width="0.8"/>
+        <rect x="128" y="90" width="16" height="4" rx="2" fill="rgba(124,109,250,0.4)"/>
+        <rect x="175" y="90" width="16" height="4" rx="2" fill="rgba(124,109,250,0.4)"/>
+        <circle cx="85" cy="120" r="22" fill="#0c0c18" stroke="rgba(124,109,250,0.5)" stroke-width="2"/>
+        <circle cx="85" cy="120" r="13" fill="#13131c" stroke="rgba(124,109,250,0.3)" stroke-width="1"/>
+        <circle cx="85" cy="120" r="5" fill="rgba(124,109,250,0.6)"/>
+        <line x1="85" y1="107" x2="85" y2="113" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="85" y1="127" x2="85" y2="133" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="72" y1="120" x2="78" y2="120" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="92" y1="120" x2="98" y2="120" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="235" cy="120" r="22" fill="#0c0c18" stroke="rgba(124,109,250,0.5)" stroke-width="2"/>
+        <circle cx="235" cy="120" r="13" fill="#13131c" stroke="rgba(124,109,250,0.3)" stroke-width="1"/>
+        <circle cx="235" cy="120" r="5" fill="rgba(124,109,250,0.6)"/>
+        <line x1="235" y1="107" x2="235" y2="113" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="235" y1="127" x2="235" y2="133" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="222" y1="120" x2="228" y2="120" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="242" y1="120" x2="248" y2="120" stroke="rgba(124,109,250,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="10" y1="75" x2="30" y2="75" stroke="rgba(124,109,250,0.25)" stroke-width="1" stroke-linecap="round"/>
+        <line x1="5" y1="83" x2="28" y2="83" stroke="rgba(124,109,250,0.15)" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      <div class="car-glow"></div>
+    </div>
+  </div>
+</section>
+
+<div class="main-wrap">
+
+  <!-- SEARCH PANEL -->
+  <div class="search-panel">
+    <div class="ptopbar">
+      <div class="ptopbar-left"><div class="pdot"></div>Search filters</div>
+    </div>
+    <div class="panel-inner">
+      <div class="fields-grid">
+        <div class="field"><label>Make &amp; Model</label><input type="text" id="model" placeholder="e.g. Toyota Camry, Honda Civic…"/></div>
+        <div class="field"><label>Max Budget</label><input type="text" id="budget" placeholder="800000"/></div>
+        <div class="field"><label>Year from</label><input type="number" id="yearFrom" placeholder="2015" min="1990" max="2030"/></div>
+        <div class="field"><label>Year to</label><input type="number" id="yearTo" placeholder="2024" min="1990" max="2030"/></div>
+        <div class="field"><label>Location</label><input type="text" id="location" placeholder="Mumbai, IN"/></div>
+        <div class="field"><label>Max km</label><input type="text" id="mileage" placeholder="60000"/></div>
+      </div>
+      <div class="plats-row">
+        <span class="plat-lbl">Searching across</span>
+        <span class="ptag-static">OLX</span>
+        <span class="ptag-static">Cars24</span>
+        <span class="ptag-static">CarDekho</span>
+        <span class="ptag-static">CarWale</span>
+        <span class="ptag-static">AutoTrader</span>
+        <span class="ptag-static">Craigslist</span>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runSearch()">
+        <span class="btn-ico"><svg width="8" height="10" viewBox="0 0 8 10" fill="white"><path d="M0 0L8 5L0 10V0Z"/></svg></span>
+        Scout listings
+      </button>
+    </div>
+  </div>
+
+  <!-- LIVE AGENT WINDOWS -->
+  <div class="agents-section" id="agentsSection">
+    <div class="agents-label">Live agents</div>
+    <div class="agents-grid" id="agentsGrid"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsArea">
+    <div class="res-header" id="resHeader" style="display:none">
+      <div class="res-meta" id="resMeta"></div>
+      <div class="sort-ctl">
+        <span class="sort-lbl">Sort</span>
+        <select class="sort-sel" id="sortSel" onchange="sortResults()">
+          <option value="price_asc">Price ↑</option>
+          <option value="price_desc">Price ↓</option>
+          <option value="mileage_asc">Mileage ↑</option>
+          <option value="year_desc">Newest</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards-grid" id="cardsGrid">
+      <div class="empty-state">
+        <div class="eico-wrap"><div class="ering"></div><div class="ering2"></div><div class="eico">🚗</div></div>
+        <div class="etitle">No searches yet</div>
+        <div class="esub">// set filters above and hit scout listings</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PURLS={
+  'olx':'https://www.olx.in/cars_c84',
+  'cars24':'https://www.cars24.com/buy-used-cars/',
+  'cardekho':'https://www.cardekho.com/used-cars',
+  'carwale':'https://www.carwale.com/used/cars/',
+  'autotrader':'https://www.autotrader.com/cars-for-sale/',
+  'craigslist':'https://www.craigslist.org/search/cta'
+};
+const PLBLS={
+  'olx':'OLX','cars24':'Cars24','cardekho':'CarDekho',
+  'carwale':'CarWale','autotrader':'AutoTrader','craigslist':'Craigslist'
+};
+
+let allResults=[];
+let totalFound=0;
+let activeAgents=0;
+
+
+
+function buildGoal(f){
+  const loc = f.location || 'India';
+  const p=[];
+  if(f.model)p.push(`make/model "${f.model}"`);
+  if(f.budget)p.push(`maximum price ${f.budget}`);
+  if(f.yearFrom||f.yearTo)p.push(`year range ${f.yearFrom||'any'}-${f.yearTo||'any'}`);
+  if(f.mileage)p.push(`under ${f.mileage} km`);
+  return `You are searching for used vehicles listed for sale ONLY in "${loc}".
+
+STRICT LOCATION RULE: Every single result MUST be physically located in or very near "${loc}". 
+Do NOT include listings from other cities, states, or countries. 
+If a listing does not clearly match "${loc}", skip it entirely.
+
+Search criteria: ${p.join(', ')}.
+
+Find up to 8 listings that match ALL criteria above AND are located in "${loc}".
+For each listing return a JSON object with EXACTLY these keys:
+- title: full vehicle name with year make model trim
+- price: price as shown (include currency symbol)
+- mileage: odometer as shown
+- year: model year as integer
+- location: exact seller city as shown on the listing
+- contact_url: full direct URL to the listing page
+- seller_type: "dealer" or "private"
+
+Return ONLY a valid JSON array. No markdown, no explanation, no preamble.
+If fewer than 8 results match all criteria including location, return only what matches.`;
+}
+
+function pnum(p){if(!p)return Infinity;return parseFloat(String(p).replace(/[^0-9.]/g,''))||Infinity;}
+
+// ── Agent window helpers ──
+function createAgentWindow(pid){
+  const win=document.createElement('div');
+  win.className='agent-window';
+  win.id='aw_'+pid;
+  win.innerHTML=`
+    <div class="aw-titlebar">
+      <div class="aw-dots"><div class="aw-dot red"></div><div class="aw-dot yellow"></div><div class="aw-dot green"></div></div>
+      <span class="aw-title">agent :: ${PLBLS[pid]}</span>
+      <div class="aw-status-dot"></div>
+    </div>
+    <div class="aw-preview" id="awpreview_${pid}">
+      <div class="aw-preview-placeholder" id="awplaceholder_${pid}">
+        <div class="ph-spin"></div>
+        <span>waiting for live preview…</span>
+      </div>
+    </div>
+    <div class="aw-logbar">
+      <span class="aw-logtext" id="awlog_${pid}">connecting…</span>
+      <span class="aw-found-badge" id="awbadge_${pid}"></span>
+    </div>`;
+  return win;
+}
+
+function awLog(pid, text, cls=''){
+  const el=document.getElementById('awlog_'+pid);
+  if(!el)return;
+  el.textContent=text;
+  el.className='aw-logtext'+(cls?' '+cls:'');
+}
+
+function setPreviewURL(pid, url){
+  const placeholder=document.getElementById('awplaceholder_'+pid);
+  const preview=document.getElementById('awpreview_'+pid);
+  if(!preview||!url)return;
+  if(placeholder)placeholder.remove();
+  const iframe=document.createElement('iframe');
+  iframe.src=url;
+  iframe.setAttribute('sandbox','allow-scripts allow-same-origin');
+  iframe.setAttribute('loading','lazy');
+  preview.appendChild(iframe);
+}
+
+function setAWState(pid, state){
+  const win=document.getElementById('aw_'+pid);
+  if(!win)return;
+  win.className='agent-window '+state;
+}
+
+// ── Progressive card append ──
+function appendCards(newListings){
+  const grid=document.getElementById('cardsGrid');
+  // remove empty state if present
+  const es=grid.querySelector('.empty-state');
+  if(es)es.remove();
+
+  newListings.forEach((v,i)=>{
+    const sc=v.seller_type==='dealer'?'dealer':'private';
+    const card=document.createElement('div');
+    card.className='vcard';
+    card.style.animationDelay=(i*40)+'ms';
+    card.innerHTML=`
+      <div class="vcard-head">
+        <span class="src-badge">${v._source||'listing'}</span>
+        <span class="sell-badge ${sc}">${v.seller_type||sc}</span>
+      </div>
+      <div class="vcard-body">
+        <div class="vcard-title">${v.title||'Vehicle listing'}</div>
+        <div class="vcard-price">${v.price||'—'}</div>
+        <div class="vcard-pills">
+          ${v.mileage?`<span class="pill"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1"/><path d="M5 5L7 3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${v.mileage}</span>`:''}
+          ${v.year?`<span class="pill"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="2" width="8" height="7" rx="1" stroke="currentColor" stroke-width="1"/><line x1="3" y1="1" x2="3" y2="3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><line x1="7" y1="1" x2="7" y2="3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${v.year}</span>`:''}
+        </div>
+      </div>
+      <div class="vcard-footer">
+        <span class="loc-txt">
+          <svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5 1a3 3 0 0 1 3 3c0 2.5-3 6-3 6S1.5 6.5 1.5 4a3 3 0 0 1 3-3z" stroke="currentColor" stroke-width="1"/></svg>
+          ${v.location||'—'}
+        </span>
+        ${v.contact_url?`<a class="view-btn" href="${v.contact_url}" target="_blank">View →</a>`:''}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function updateMeta(){
+  const hdr=document.getElementById('resHeader');
+  const meta=document.getElementById('resMeta');
+  hdr.style.display='flex';
+  meta.innerHTML=`<strong>${totalFound}</strong> listing${totalFound!==1?'s':''} found${activeAgents>0?' · <span style="color:var(--accent2)">'+activeAgents+' agent'+(activeAgents>1?'s':'')+' still running…</span>':''}`;
+}
+
+function sortResults(){
+  const by=document.getElementById('sortSel').value;
+  const s=[...allResults];
+  if(by==='price_asc')s.sort((a,b)=>pnum(a.price)-pnum(b.price));
+  if(by==='price_desc')s.sort((a,b)=>pnum(b.price)-pnum(a.price));
+  if(by==='mileage_asc')s.sort((a,b)=>pnum(a.mileage)-pnum(b.mileage));
+  if(by==='year_desc')s.sort((a,b)=>(b.year||0)-(a.year||0));
+  // full re-render on manual sort
+  const grid=document.getElementById('cardsGrid');
+  grid.innerHTML='';
+  appendCards(s);
+}
+
+// Simulated live log messages while the agent is working
+const LIVE_LOGS=[
+  'loading page DOM…',
+  'scrolling through listings…',
+  'parsing vehicle details…',
+  'checking price filters…',
+  'reading seller info…',
+  'extracting mileage data…',
+  'verifying location…',
+  'scanning next page…',
+  'filtering by year range…',
+  'collecting contact links…',
+];
+
+async function fetchSSE(url, goal, pid){
+  setAWState(pid,'running');
+  awLog(pid,'connecting…');
+
+  // Ticker for log bar activity
+  let logIdx=0;
+  const ticker=setInterval(()=>{
+    awLog(pid, LIVE_LOGS[logIdx % LIVE_LOGS.length]);
+    logIdx++;
+  }, 2600);
+
+  try{
+    const resp = await fetch('/proxy',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url,goal})
+    });
+
+    if(!resp.ok){
+      clearInterval(ticker);
+      awLog(pid,`HTTP ${resp.status} error`,'er');
+      setAWState(pid,'error');
+      return[];
+    }
+
+    // Read our own SSE stream — we emit two events:
+    // 1) { type:"streaming_url", url:"..." }  — arrives early, plug into iframe
+    // 2) { type:"done", listings:[...] }       — arrives when agent finishes
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream:true});
+
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for(const line of lines){
+        if(!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        try{
+          const evt = JSON.parse(raw);
+
+          if(evt.type === 'streaming_url' && evt.url){
+            // ✅ Show live browser preview immediately
+            awLog(pid,'live preview loaded','hi');
+            setPreviewURL(pid, evt.url);
+          }
+
+          if(evt.type === 'done'){
+            clearInterval(ticker);
+            const listings = (evt.listings||[]).map(l=>({...l,_source:PLBLS[pid]}));
+            setAWState(pid,'done');
+            awLog(pid,`found ${listings.length} listing${listings.length!==1?'s':''}!`,'ok');
+            const badge = document.getElementById('awbadge_'+pid);
+            if(badge) badge.textContent = listings.length+' found';
+            return listings;
+          }
+
+          if(evt.type === 'error'){
+            clearInterval(ticker);
+            awLog(pid, evt.message||'error','er');
+            setAWState(pid,'error');
+            return[];
+          }
+        }catch{}
+      }
+    }
+
+    clearInterval(ticker);
+    setAWState(pid,'done');
+    return[];
+
+  }catch(e){
+    clearInterval(ticker);
+    console.error(pid,e);
+    awLog(pid,'connection error','er');
+    setAWState(pid,'error');
+    return[];
+  }
+}
+
+async function runSearch(){
+  const model=document.getElementById('model').value.trim();
+  if(!model){document.getElementById('model').focus();return;}
+  const budget=document.getElementById('budget').value.trim();
+  const yearFrom=document.getElementById('yearFrom').value.trim();
+  const yearTo=document.getElementById('yearTo').value.trim();
+  const location=document.getElementById('location').value.trim();
+  const mileage=document.getElementById('mileage').value.trim();
+  const selected=Object.keys(PURLS);
+
+  // reset
+  allResults=[];
+  totalFound=0;
+  activeAgents=selected.length;
+  document.getElementById('cardsGrid').innerHTML=`
+    <div class="empty-state">
+      <div class="eico-wrap"><div class="ering"></div><div class="ering2"></div><div class="eico">🔍</div></div>
+      <div class="etitle">Agents searching…</div>
+      <div class="esub">// results will appear as each agent finishes</div>
+    </div>`;
+  document.getElementById('resHeader').style.display='none';
+
+  // btn state
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spin" style="border-top-color:#fff;border-color:rgba(255,255,255,0.2);width:14px;height:14px"></div> Scouting…';
+
+  // build agent windows
+  const agentsSection=document.getElementById('agentsSection');
+  const agentsGrid=document.getElementById('agentsGrid');
+  agentsGrid.innerHTML='';
+  agentsSection.classList.add('visible');
+  selected.forEach(pid=>{
+    agentsGrid.appendChild(createAgentWindow(pid));
+  });
+
+  const goal=buildGoal({model,budget,yearFrom,yearTo,location,mileage});
+
+  // fire all in parallel — handle each as it completes
+  const promises=selected.map(pid=>
+    fetchSSE(PURLS[pid],goal,pid).then(listings=>{
+      activeAgents--;
+      if(listings.length>0){
+        allResults.push(...listings);
+        totalFound+=listings.length;
+        appendCards(listings);
+      }
+      updateMeta();
+    })
+  );
+
+  await Promise.allSettled(promises);
+
+  // all done
+  activeAgents=0;
+  updateMeta();
+  btn.disabled=false;
+  btn.innerHTML='<span class="btn-ico"><svg width="8" height="10" viewBox="0 0 8 10" fill="white"><path d="M0 0L8 5L0 10V0Z"/></svg></span> Scout listings';
+
+  if(totalFound===0){
+    document.getElementById('cardsGrid').innerHTML=`
+      <div class="empty-state">
+        <div class="eico-wrap"><div class="ering"></div><div class="eico">🔍</div></div>
+        <div class="etitle">No listings found</div>
+        <div class="esub">// try broader filters or different platforms</div>
+      </div>`;
+  }
+}
+</script>
+</body>
+</html>

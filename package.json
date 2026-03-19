@@ -1,0 +1,10 @@
+{
+  "name": "mino-vehicle-scout",
+  "version": "1.0.0",
+  "description": "Multi-platform vehicle search tool powered by tinyfish.ai",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}
