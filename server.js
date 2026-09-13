@@ -1,11 +1,38 @@
 const https = require("https");
 
-const TINYFISH_API_KEY = "sk-tinyfish-22xHvUjCtmZO-Ul_y7ZnA-OkIYDM7dVK";
+const TINYFISH_API_KEY = process.env.TINYFISH_API_KEY;
+
+// Only these hosts may be driven through this proxy. Without an allowlist the
+// endpoint is an open relay: anyone who finds the URL can spend this account's
+// TinyFish credits running an agent against any site they choose.
+const ALLOWED_HOSTS = new Set([
+  "www.olx.in",
+  "www.cars24.com",
+  "www.cardekho.com",
+  "www.carwale.com",
+  "www.autotrader.com",
+  "www.craigslist.org",
+]);
+
+function isAllowedTarget(raw) {
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "https:" && ALLOWED_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
 
 module.exports = (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // Same-origin only. The page and this function are served from one
+  // deployment, so there is no reason to hand the endpoint to other origins.
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (!TINYFISH_API_KEY) {
+    res.status(500).end("TINYFISH_API_KEY is not configured");
+    return;
+  }
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -29,13 +56,22 @@ module.exports = (req, res) => {
     }
 
     const { url, goal } = parsed;
+
+    if (!isAllowedTarget(url)) {
+      res.status(400).end("target url not allowed");
+      return;
+    }
+    if (typeof goal !== "string" || goal.length > 4000) {
+      res.status(400).end("invalid goal");
+      return;
+    }
+
     const payload = JSON.stringify({ url, goal });
 
     // Stream our own SSE back to the browser
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      "Access-Control-Allow-Origin": "*",
       "X-Accel-Buffering": "no",
     });
 
